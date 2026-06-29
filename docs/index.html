@@ -1,0 +1,1165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>U.S. Financial Literacy Dashboard</title>
+  <meta name="description" content="Research-grade data on financial literacy, wealth gaps, fragility, and resource access across American households. Data from FINRA NFCS, Federal Reserve SCF, FDIC, and FRED." />
+
+  <!-- Chart.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+
+  <style>
+    /* ─── Design Tokens ───────────────────────────────────────────── */
+    :root {
+      --ink:        #0f1923;
+      --ink-muted:  #4a5568;
+      --ink-faint:  #8896a6;
+      --surface:    #f7f8fa;
+      --card:       #ffffff;
+      --border:     #e2e8f0;
+
+      /* Research accent palette — slate-blue primary, amber warning, rose risk */
+      --blue:       #2563eb;
+      --blue-light: #dbeafe;
+      --amber:      #d97706;
+      --amber-light:#fef3c7;
+      --rose:       #e11d48;
+      --rose-light: #ffe4e6;
+      --green:      #059669;
+      --green-light:#d1fae5;
+      --purple:     #7c3aed;
+      --purple-light:#ede9fe;
+
+      --chart-1: #2563eb;
+      --chart-2: #d97706;
+      --chart-3: #e11d48;
+      --chart-4: #059669;
+      --chart-5: #7c3aed;
+      --chart-6: #0891b2;
+
+      --font-display: "Georgia", "Times New Roman", serif;
+      --font-body:    system-ui, -apple-system, "Segoe UI", sans-serif;
+      --font-mono:    "JetBrains Mono", "Fira Code", monospace;
+
+      --radius-sm: 4px;
+      --radius:    8px;
+      --radius-lg: 14px;
+
+      --shadow-card: 0 1px 3px rgba(0,0,0,.06), 0 4px 12px rgba(0,0,0,.05);
+    }
+
+    /* ─── Reset & Base ────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: var(--font-body);
+      background: var(--surface);
+      color: var(--ink);
+      font-size: 15px;
+      line-height: 1.6;
+    }
+    a { color: var(--blue); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* ─── Header / Hero ───────────────────────────────────────────── */
+    .site-header {
+      background: var(--ink);
+      color: #fff;
+      padding: 48px 0 40px;
+    }
+    .container {
+      max-width: 1220px;
+      margin: 0 auto;
+      padding: 0 28px;
+    }
+    .header-eyebrow {
+      font-size: 11px;
+      font-family: var(--font-mono);
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: #94a3b8;
+      margin-bottom: 14px;
+    }
+    .header-title {
+      font-family: var(--font-display);
+      font-size: clamp(28px, 4vw, 44px);
+      font-weight: normal;
+      line-height: 1.15;
+      max-width: 680px;
+    }
+    .header-title em {
+      font-style: normal;
+      color: #60a5fa;
+    }
+    .header-sub {
+      margin-top: 16px;
+      max-width: 620px;
+      color: #94a3b8;
+      font-size: 15px;
+      line-height: 1.7;
+    }
+    .header-meta {
+      margin-top: 28px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-family: var(--font-mono);
+      padding: 4px 10px;
+      border-radius: var(--radius-sm);
+      background: rgba(255,255,255,.1);
+      color: #cbd5e1;
+      border: 1px solid rgba(255,255,255,.12);
+    }
+    .badge .dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: #4ade80;
+    }
+    #last-updated { color: #94a3b8; font-size: 12px; font-family: var(--font-mono); }
+
+    /* ─── Nav Tabs ────────────────────────────────────────────────── */
+    .tab-nav {
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .tab-nav .container {
+      display: flex;
+      gap: 0;
+      overflow-x: auto;
+    }
+    .tab-btn {
+      padding: 14px 20px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--ink-muted);
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: color .15s, border-color .15s;
+    }
+    .tab-btn:hover { color: var(--ink); }
+    .tab-btn.active { color: var(--blue); border-bottom-color: var(--blue); }
+
+    /* ─── Main Layout ─────────────────────────────────────────────── */
+    main { padding: 40px 0 80px; }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* ─── Section titles ──────────────────────────────────────────── */
+    .section-header {
+      margin-bottom: 28px;
+    }
+    .section-label {
+      font-size: 11px;
+      font-family: var(--font-mono);
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--ink-faint);
+      margin-bottom: 6px;
+    }
+    .section-title {
+      font-family: var(--font-display);
+      font-size: 22px;
+      font-weight: normal;
+      color: var(--ink);
+    }
+    .section-rq {
+      margin-top: 8px;
+      font-size: 14px;
+      color: var(--ink-muted);
+      max-width: 680px;
+      padding: 10px 14px;
+      background: var(--blue-light);
+      border-left: 3px solid var(--blue);
+      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    }
+    .section-rq strong { color: var(--blue); }
+
+    /* ─── KPI Cards ───────────────────────────────────────────────── */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      gap: 16px;
+      margin-bottom: 40px;
+    }
+    .kpi-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 22px 20px 18px;
+      box-shadow: var(--shadow-card);
+    }
+    .kpi-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--ink-faint);
+      margin-bottom: 10px;
+      font-family: var(--font-mono);
+    }
+    .kpi-value {
+      font-family: var(--font-display);
+      font-size: 38px;
+      line-height: 1;
+      color: var(--ink);
+    }
+    .kpi-unit {
+      font-size: 16px;
+      color: var(--ink-muted);
+      margin-left: 2px;
+    }
+    .kpi-desc {
+      margin-top: 8px;
+      font-size: 12.5px;
+      color: var(--ink-muted);
+      line-height: 1.5;
+    }
+    .kpi-card.warn  .kpi-value { color: var(--rose); }
+    .kpi-card.caution .kpi-value { color: var(--amber); }
+    .kpi-card.ok    .kpi-value { color: var(--green); }
+    .kpi-card.info  .kpi-value { color: var(--purple); }
+
+    /* ─── Chart Grid ──────────────────────────────────────────────── */
+    .chart-grid {
+      display: grid;
+      gap: 20px;
+    }
+    .chart-grid-2 { grid-template-columns: repeat(auto-fit, minmax(460px, 1fr)); }
+    .chart-grid-3 { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+
+    .chart-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      box-shadow: var(--shadow-card);
+    }
+    .chart-card-header {
+      margin-bottom: 18px;
+    }
+    .chart-card-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--ink);
+      margin-bottom: 4px;
+    }
+    .chart-card-rq {
+      font-size: 12.5px;
+      color: var(--ink-muted);
+      line-height: 1.5;
+    }
+    .chart-source {
+      margin-top: 12px;
+      font-size: 11px;
+      font-family: var(--font-mono);
+      color: var(--ink-faint);
+    }
+    .chart-wrapper {
+      position: relative;
+      height: 260px;
+    }
+    .chart-wrapper-tall { height: 320px; }
+
+    /* ─── Insight Box ─────────────────────────────────────────────── */
+    .insight-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+      margin-top: 24px;
+    }
+    .insight-box {
+      padding: 16px 18px;
+      border-radius: var(--radius);
+      border: 1px solid;
+    }
+    .insight-box.warn   { background: var(--rose-light);   border-color: #fca5a5;  }
+    .insight-box.caution{ background: var(--amber-light);  border-color: #fcd34d; }
+    .insight-box.ok     { background: var(--green-light);  border-color: #6ee7b7; }
+    .insight-box.info   { background: var(--blue-light);   border-color: #93c5fd; }
+    .insight-box.purple { background: var(--purple-light); border-color: #c4b5fd; }
+    .insight-title {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      margin-bottom: 6px;
+    }
+    .insight-box.warn   .insight-title { color: var(--rose); }
+    .insight-box.caution .insight-title { color: var(--amber); }
+    .insight-box.ok     .insight-title { color: var(--green); }
+    .insight-box.info   .insight-title { color: var(--blue); }
+    .insight-box.purple .insight-title { color: var(--purple); }
+    .insight-text { font-size: 13.5px; color: var(--ink-muted); line-height: 1.6; }
+
+    /* ─── Data Table ──────────────────────────────────────────────── */
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13.5px;
+    }
+    .data-table th {
+      text-align: left;
+      font-size: 11px;
+      font-family: var(--font-mono);
+      text-transform: uppercase;
+      letter-spacing: .07em;
+      color: var(--ink-faint);
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .data-table td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+      color: var(--ink-muted);
+    }
+    .data-table tr:last-child td { border-bottom: none; }
+    .data-table tr:hover td { background: var(--surface); }
+    .bar-cell { display: flex; align-items: center; gap: 8px; }
+    .bar-fill {
+      height: 8px;
+      border-radius: 4px;
+      background: var(--blue);
+      min-width: 2px;
+    }
+    .bar-val { font-size: 13px; font-weight: 600; color: var(--ink); min-width: 32px; }
+
+    /* ─── Footer ──────────────────────────────────────────────────── */
+    .site-footer {
+      background: var(--ink);
+      color: #64748b;
+      padding: 36px 0;
+      font-size: 13px;
+      line-height: 1.7;
+    }
+    .footer-sources { margin-top: 12px; }
+    .footer-sources li {
+      list-style: none;
+      padding: 2px 0;
+    }
+    .footer-sources li::before { content: "→ "; color: #475569; }
+
+    /* ─── Responsive ──────────────────────────────────────────────── */
+    @media (max-width: 640px) {
+      .chart-grid-2, .chart-grid-3 { grid-template-columns: 1fr; }
+      .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+      .header-title { font-size: 26px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════ HEADER ══════════════════ -->
+<header class="site-header">
+  <div class="container">
+    <div class="header-eyebrow">Research Dashboard · Financial Literacy</div>
+    <h1 class="header-title">
+      Who Understands Money in America?<br>
+      <em>Measuring the Financial Literacy Gap</em>
+    </h1>
+    <p class="header-sub">
+      An evidence-based view of financial knowledge, fragility, wealth inequality, and access
+      across the U.S. population — drawn from FINRA NFCS, Federal Reserve SCF, FDIC, and FRED.
+    </p>
+    <div class="header-meta">
+      <span class="badge"><span class="dot"></span> Weekly auto-refresh via GitHub Actions</span>
+      <span class="badge">FINRA NFCS 2024</span>
+      <span class="badge">Fed SCF 2022</span>
+      <span class="badge">FDIC 2023</span>
+      <span id="last-updated">Loaded…</span>
+    </div>
+  </div>
+</header>
+
+<!-- ══════════════════ NAV TABS ══════════════════ -->
+<nav class="tab-nav">
+  <div class="container">
+    <button class="tab-btn active" data-tab="overview">Overview</button>
+    <button class="tab-btn" data-tab="demographics">Demographics</button>
+    <button class="tab-btn" data-tab="fragility">Fragility & Debt</button>
+    <button class="tab-btn" data-tab="wealth">Wealth Gaps</button>
+    <button class="tab-btn" data-tab="access">Access & FinTech</button>
+    <button class="tab-btn" data-tab="macro">Macro Context</button>
+  </div>
+</nav>
+
+<!-- ══════════════════ MAIN ══════════════════ -->
+<main>
+  <div class="container">
+
+    <!-- ───────── TAB: OVERVIEW ───────── -->
+    <section class="tab-panel active" id="tab-overview">
+      <div class="section-header">
+        <div class="section-label">Section 1</div>
+        <h2 class="section-title">The State of Financial Literacy in America</h2>
+        <p class="section-rq"><strong>Research Question:</strong> What share of Americans demonstrate basic financial knowledge, and how has this changed over 15 years of measurement?</p>
+      </div>
+
+      <div class="kpi-grid" id="kpi-row"></div>
+
+      <div class="chart-grid chart-grid-2">
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <div class="chart-card-title">Financial Literacy Rate Over Time</div>
+            <div class="chart-card-rq">% adults scoring 5+ of 7 on FINRA's Big-7 knowledge quiz. After 12 years of improvement, 2024 marks a concerning new low.</div>
+          </div>
+          <div class="chart-wrapper"><canvas id="chart-literacy-trend"></canvas></div>
+          <div class="chart-source">Source: FINRA Foundation NFCS 2009–2024</div>
+        </div>
+
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <div class="chart-card-title">Knowledge by Topic Area</div>
+            <div class="chart-card-rq">Which financial concepts do Americans understand most — and least? Bond pricing and risk diversification remain the largest knowledge gaps.</div>
+          </div>
+          <div class="chart-wrapper"><canvas id="chart-topics"></canvas></div>
+          <div class="chart-source">Source: FINRA Foundation NFCS 2024</div>
+        </div>
+      </div>
+
+      <div class="insight-grid">
+        <div class="insight-box warn">
+          <div class="insight-title">📉 Historic Low</div>
+          <div class="insight-text">Only 27% of adults answered 5 or more of 7 financial knowledge questions correctly in 2024 — the lowest rate since measurement began in 2009 and down from 42% in 2009.</div>
+        </div>
+        <div class="insight-box caution">
+          <div class="insight-title">⚠ Struggle of the Middle</div>
+          <div class="insight-text">Middle-income households ($25k–$75k), those with some college but no degree, and adults 35–54 show disproportionate financial strain — despite stable incomes.</div>
+        </div>
+        <div class="insight-box info">
+          <div class="insight-title">📱 Inflation Awareness Up</div>
+          <div class="insight-text">Correct responses to the inflation question rose from 53% to 58% between 2021 and 2024 — possibly reflecting lived experience with elevated prices.</div>
+        </div>
+        <div class="insight-box purple">
+          <div class="insight-title">💸 $415B Annual Cost</div>
+          <div class="insight-text">The National Financial Educators Council estimates financial illiteracy costs Americans $415 billion per year — roughly $1M per minute — through poor decisions, fees, and lost returns.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ───────── TAB: DEMOGRAPHICS ───────── -->
+    <section class="tab-panel" id="tab-demographics">
+      <div class="section-header">
+        <div class="section-label">Section 2</div>
+        <h2 class="section-title">Who Is Most Financially Vulnerable?</h2>
+        <p class="section-rq"><strong>Research Question:</strong> How do financial literacy and fragility vary by age, education, income, and race — and which demographic intersections face compounding disadvantages?</p>
+      </div>
+
+      <div class="chart-grid chart-grid-2">
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <div class="chart-card-title">Literacy & Fragility by Age Group</div>
+            <div class="chart-card-rq">Younger adults have the lowest financial knowledge AND the highest financial fragility — a compounding vulnerability at the start of their wealth-building years.</div>
+          </div>
+          <div class="chart-wrapper chart-wrapper-tall"><canvas id="chart-age"></canvas></div>
+          <div class="chart-source">Source: FINRA Foundation NFCS 2024</div>
+        </div>
+
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <div class="chart-card-title">Education's Dual Dividend</div>
+            <div class="chart-card-rq">Education predicts both financial literacy AND retirement savings participation. The gap between college graduates and non-graduates is 43 percentage points in retirement savings.</div>
+          </div>
+          <div class="chart-wrapper chart-wrapper-tall"><canvas id="chart-education"></canvas></div>
+          <div class="chart-source">Source: FINRA Foundation NFCS 2024</div>
+        </div>
+
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <div class="chart-card-title">Income Gradient in Literacy & Fragility</div>
+            <div class="chart-card-rq">Financial fragility drops sharply with income — but even households earning $50k–75k show significant vulnerability, with 42% unable to cover a $2,000 emergency.</div>
+          </div>
+          <div class="chart-wrapper chart-wrapper-tall"><canvas id="chart-income"></canvas></div>
+          <div class="chart-source">Source: FINRA Foundation NFCS 2024</div>
+        </div>
+
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <div class="chart-card-title">Literacy by Race / Ethnicity</div>
+            <div class="chart-card-rq">Significant racial gaps persist in measured financial literacy — reflecting structural inequities in educational access, wealth accumulation, and financial system inclusion.</div>
+          </div>
+          <div class="chart-wrapper chart-wrapper-tall"><canvas id="chart-race"></canvas></div>
+          <div class="chart-source">Source: FINRA Foundation NFCS 2024</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ───────── TAB: FRAGILITY & DEBT ───────── -->
+    <section class="tab-panel" id="tab-fragility">
+      <div class="section-header">
+        <div class="section-label">Section 3</div>
+        <h2 class="section-title">Financial Fragility, Savings & Credit Behavior</h2>
+        <p class="section-rq"><strong>Research Question:</strong> How financially resilient are American households, and what patterns of savings and credit use signal structural vulnerability?</p>
+      </div>
+
+      <div class="chart-grid chart-grid-2">
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <div class="chart-card-title">Financial Fragility Trend (2009–2024)</div>
+            <div class="chart-card-rq">After 12 years of improvement, fragility reversed sharply in 2024. 42% of adults say they could not cover a $2,000 emergency within 30 days — matching 2015 levels.</div>
+          </div>
+          <div class="chart-wrapper"><canvas id="chart-fragility"></canvas></div>
+          <div class="chart-source">Source: FINRA Foundation NFCS 2009–2024</div>
+        </div>
+
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <div class="chart-card-title">Credit Card Payment Behavior</div>
+            <div class="chart-card-rq">20% of card holders pay only the minimum — a costly habit that compounds debt. Only 45% consistently pay their full balance monthly.</div>
+          </div>
+          <div class="chart-wrapper"><canvas id="chart-credit-behavior"></canvas></div>
+          <div class="chart-source">Source: FINRA Foundation NFCS 2024</div>
+        </div>
+      </div>
+
+      <div class="chart-card" style="margin-top:20px;">
+        <div class="chart-card-header">
+          <div class="chart-card-title">Emergency Fund Coverage by Group</div>
+          <div class="chart-card-rq">The share of adults with a 3-month emergency fund dropped from 53% (2021) to 46% (2024) nationally. This table shows the current breakdown and identifies priority intervention gaps.</div>
+        </div>
+        <div style="overflow-x:auto;">
+          <table class="data-table" id="emergency-table">
+            <thead><tr>
+              <th>Metric</th><th>2021 Rate</th><th>2024 Rate</th><th>Change</th><th>Risk Level</th>
+            </tr></thead>
+            <tbody>
+              <tr><td>Has 3-month emergency fund (all adults)</td><td>53%</td><td>46%</td><td style="color:var(--rose)">▼ 7pp</td><td style="color:var(--rose)">High</td></tr>
+              <tr><td>Spending more than income</td><td>18%</td><td>34%</td><td style="color:var(--rose)">▼ +16pp</td><td style="color:var(--rose)">Critical</td></tr>
+              <tr><td>Satisfied with financial condition</td><td>54%</td><td>43%</td><td style="color:var(--rose)">▼ 11pp</td><td style="color:var(--amber)">Elevated</td></tr>
+              <tr><td>Food costs forced spending cuts</td><td>—</td><td>67%</td><td>New metric</td><td style="color:var(--amber)">Elevated</td></tr>
+              <tr><td>Have retirement savings account</td><td>55%</td><td>54%</td><td>≈ stable</td><td style="color:var(--amber)">Elevated</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="chart-source">Source: FINRA Foundation NFCS 2021 & 2024</div>
+      </div>
+    </section>
+
+    <!-- ───────── TAB: WEALTH GAPS ───────── -->
+    <section class="tab-panel" id="tab-wealth">
+      <div class="section-header">
+        <div class="section-label">Section 4</div>
+        <h2 class="section-title">Wealth Inequality & Retirement Gaps</h2>
+        <p class="section-rq"><strong>Research Question:</strong> How stark are racial and generational wealth disparities in the U.S., and what do they imply about retirement security?</p>
+      </div>
+
+      <div class="chart-grid chart-grid-2">
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <div class="chart-card-title">Median Net Worth by Race/Ethnicity</div>
+            <div class="chart-card-rq">White families hold 6.5× the median net worth of Black families and 5.6× that of Hispanic families — a structural gap that persists across income levels.</div>
+          </div>
+          <div class="chart-wrapper"><canvas id="chart-race-wealth"></canvas></div>
+          <div class="chart-source">Source: Federal Reserve Survey of Consumer Finances 2022</div>
+        </div>
+
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <div class="chart-card-title">Median Retirement Savings by Age</div>
+            <div class="chart-card-rq">Median retirement balances peak in the 65–74 cohort at $200k — far below the $1M–$1.5M many advisors recommend. Adults under 35 have a median of just $18k saved.</div>
+          </div>
+          <div class="chart-wrapper"><canvas id="chart-retirement-age"></canvas></div>
+          <div class="chart-source">Source: Federal Reserve Survey of Consumer Finances 2022</div>
+        </div>
+      </div>
+
+      <div class="insight-grid">
+        <div class="insight-box warn">
+          <div class="insight-title">🏠 6.5× Wealth Gap</div>
+          <div class="insight-text">White families' median net worth ($285k) is 6.5× that of Black families ($44k). This gap has persisted for decades and cannot be explained by income differences alone.</div>
+        </div>
+        <div class="insight-box caution">
+          <div class="insight-title">👴 Retirement Crisis</div>
+          <div class="insight-text">32% of working-age Americans have zero retirement savings. Among Millennials specifically, 66% have no retirement savings — despite being in prime earning years.</div>
+        </div>
+        <div class="insight-box info">
+          <div class="insight-title">🎓 Education Dividend</div>
+          <div class="insight-text">80% of college graduates have a retirement account, vs. 37% of those without any college experience — a 43-point gap that compounds over a lifetime.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ───────── TAB: ACCESS & FINTECH ───────── -->
+    <section class="tab-panel" id="tab-access">
+      <div class="section-header">
+        <div class="section-label">Section 5</div>
+        <h2 class="section-title">Banking Access, Gaps & FinTech Adoption</h2>
+        <p class="section-rq"><strong>Research Question:</strong> Who remains excluded from the formal financial system, and does FinTech adoption narrow or widen the literacy-access gap?</p>
+      </div>
+
+      <div class="chart-grid chart-grid-2">
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <div class="chart-card-title">Unbanked Rate by Household Income</div>
+            <div class="chart-card-rq">Lack of banking access is strongly income-stratified: 15% of households earning below $15k are unbanked vs. under 1% above $50k — compounding financial exclusion at the bottom.</div>
+          </div>
+          <div class="chart-wrapper"><canvas id="chart-unbanked"></canvas></div>
+          <div class="chart-source">Source: FDIC National Survey of Unbanked & Underbanked 2023</div>
+        </div>
+
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <div class="chart-card-title">FinTech & Digital Tool Adoption (2024)</div>
+            <div class="chart-card-rq">Mobile banking is nearly universal (81%), but newer tools like robo-advisors (11%) and BNPL (28%) show uneven adoption — raising questions about who benefits from FinTech innovation.</div>
+          </div>
+          <div class="chart-wrapper"><canvas id="chart-fintech"></canvas></div>
+          <div class="chart-source">Source: FINRA Foundation NFCS 2024</div>
+        </div>
+      </div>
+
+      <div class="chart-card" style="margin-top:20px;">
+        <div class="chart-card-header">
+          <div class="chart-card-title">Why Are Households Unbanked?</div>
+          <div class="chart-card-rq">Top reasons households avoid the banking system — pointing to policy levers for improving access through fee reform, trust-building, and digital inclusion.</div>
+        </div>
+        <div style="overflow-x:auto;">
+          <table class="data-table">
+            <thead><tr><th>Reason for Being Unbanked</th><th>% Citing Reason</th><th>Share</th></tr></thead>
+            <tbody id="unbanked-reasons-table"></tbody>
+          </table>
+        </div>
+        <div class="chart-source">Source: FDIC National Survey of Unbanked & Underbanked Households 2023</div>
+      </div>
+    </section>
+
+    <!-- ───────── TAB: MACRO CONTEXT ───────── -->
+    <section class="tab-panel" id="tab-macro">
+      <div class="section-header">
+        <div class="section-label">Section 6</div>
+        <h2 class="section-title">Macro Financial Environment</h2>
+        <p class="section-rq"><strong>Research Question:</strong> How do aggregate household debt, savings rates, and cost-of-living trends shape the context in which financial literacy deficits do the most damage?</p>
+      </div>
+
+      <div class="chart-grid chart-grid-2" id="fred-charts">
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <div class="chart-card-title">U.S. Personal Savings Rate</div>
+            <div class="chart-card-rq">The savings rate has fallen well below its historical average (~7%). Live data from FRED (BEA). When this is low, financial illiteracy translates directly into household vulnerability.</div>
+          </div>
+          <div class="chart-wrapper"><canvas id="chart-savings-rate"></canvas></div>
+          <div class="chart-source">Source: FRED — BEA Personal Saving Rate (PSAVERT) · Weekly auto-refresh</div>
+        </div>
+
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <div class="chart-card-title">Household Debt Service as % of Income</div>
+            <div class="chart-card-rq">The share of disposable income consumed by debt repayments. Live data from FRED. Rising debt burden reduces the margin for financial error among less-literate households.</div>
+          </div>
+          <div class="chart-wrapper"><canvas id="chart-debt-service"></canvas></div>
+          <div class="chart-source">Source: FRED — Federal Reserve Debt Service Payments (TDSP) · Weekly auto-refresh</div>
+        </div>
+
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <div class="chart-card-title">Credit Card Delinquency Rate</div>
+            <div class="chart-card-rq">Share of credit card loans 90+ days past due. Rising delinquency is a direct consequence of low financial literacy — particularly among minimum-payment-only cardholders.</div>
+          </div>
+          <div class="chart-wrapper"><canvas id="chart-cc-delinq"></canvas></div>
+          <div class="chart-source">Source: FRED — DRCCLACBS · Weekly auto-refresh</div>
+        </div>
+
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <div class="chart-card-title">Federal Funds Rate</div>
+            <div class="chart-card-rq">The policy rate directly affects borrowing costs for mortgages, credit cards, and student loans. Financial literacy around interest rates becomes more consequential in high-rate environments.</div>
+          </div>
+          <div class="chart-wrapper"><canvas id="chart-fed-funds"></canvas></div>
+          <div class="chart-source">Source: FRED — FEDFUNDS · Weekly auto-refresh</div>
+        </div>
+      </div>
+
+      <div class="insight-box info" style="margin-top:24px;">
+        <div class="insight-title">ℹ️ Live FRED Data</div>
+        <div class="insight-text">The charts above pull live observations from the FRED API (St. Louis Fed) via a weekly GitHub Actions pipeline. Add your <code>FRED_API_KEY</code> as a repository secret to enable live data. Without a key, charts render as empty but all curated research data remains available.</div>
+      </div>
+    </section>
+
+  </div><!-- /container -->
+</main>
+
+<!-- ══════════════════ FOOTER ══════════════════ -->
+<footer class="site-footer">
+  <div class="container">
+    <strong style="color:#94a3b8;">Data Sources</strong>
+    <ul class="footer-sources">
+      <li>FINRA Investor Education Foundation — National Financial Capability Study (NFCS) 2009–2024 · <a href="https://www.finrafoundation.org/national-financial-capability-study" style="color:#60a5fa;">finrafoundation.org</a></li>
+      <li>Federal Reserve Board — Survey of Consumer Finances (SCF) 2022 · <a href="https://www.federalreserve.gov/econres/scfindex.htm" style="color:#60a5fa;">federalreserve.gov</a></li>
+      <li>FDIC — National Survey of Unbanked and Underbanked Households 2023 · <a href="https://www.fdic.gov/analysis/household-survey" style="color:#60a5fa;">fdic.gov</a></li>
+      <li>Federal Reserve Bank of St. Louis — FRED Economic Data API · <a href="https://fred.stlouisfed.org" style="color:#60a5fa;">fred.stlouisfed.org</a></li>
+      <li>National Financial Educators Council — Cost of Financial Illiteracy Estimates 2024</li>
+    </ul>
+    <p style="margin-top:16px; color:#475569;">Dashboard built for academic research. Data updated weekly via GitHub Actions. All values represent U.S. adult population estimates.</p>
+  </div>
+</footer>
+
+<!-- ══════════════════ DATA + CHARTS ══════════════════ -->
+<script src="assets/js/dashboard_data.js"></script>
+<script>
+// ─── Helpers ──────────────────────────────────────────────────────
+const D = window.DASHBOARD_DATA || {};
+
+const PALETTE = [
+  "#2563eb","#d97706","#e11d48","#059669","#7c3aed","#0891b2","#84cc16","#f97316"
+];
+
+function makeChart(id, config) {
+  const ctx = document.getElementById(id);
+  if (!ctx) return null;
+  return new Chart(ctx, config);
+}
+
+function linearGradient(ctx, colorHex) {
+  const g = ctx.createLinearGradient(0, 0, 0, 300);
+  g.addColorStop(0, colorHex + "88");
+  g.addColorStop(1, colorHex + "08");
+  return g;
+}
+
+// ─── Last Updated ────────────────────────────────────────────────
+const ts = D?.meta?.last_updated || D?.key_stats?.updated_at;
+if (ts) {
+  const d = new Date(ts);
+  document.getElementById("last-updated").textContent =
+    "Updated " + d.toLocaleDateString("en-US", {month:"short", day:"numeric", year:"numeric"});
+}
+
+// ─── Tab Navigation ──────────────────────────────────────────────
+document.querySelectorAll(".tab-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+    document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
+    btn.classList.add("active");
+    document.getElementById("tab-" + btn.dataset.tab).classList.add("active");
+    window.scrollTo({top: 0, behavior:"smooth"});
+  });
+});
+
+// ─── KPI Cards ───────────────────────────────────────────────────
+const ks = D.key_stats || {};
+const kpis = [
+  { label: "Financially Literate", value: ks.pct_financially_literate_5plus_2024, unit: "%",
+    desc: "scored 5+ of 7 on FINRA Big-7 quiz (2024)", cls: "warn" },
+  { label: "Financially Fragile", value: ks.pct_financially_fragile_2024, unit: "%",
+    desc: "can't cover $2k emergency in 30 days (2024)", cls: "warn" },
+  { label: "No Emergency Fund", value: ks.pct_no_emergency_fund_3mo_2024, unit: "%",
+    desc: "lack 3 months of living expenses saved", cls: "warn" },
+  { label: "No Retirement Savings", value: ks.pct_no_retirement_savings_working_age, unit: "%",
+    desc: "working-age adults with $0 saved for retirement", cls: "caution" },
+  { label: "Annual Cost", value: "$415B", unit: "",
+    desc: "estimated annual cost of financial illiteracy in the U.S.", cls: "info" },
+  { label: "Overspending Income", value: ks.pct_overspending_income_2024, unit: "%",
+    desc: "adults spending more than they earn monthly (2024)", cls: "caution" },
+];
+const kpiRow = document.getElementById("kpi-row");
+kpis.forEach(k => {
+  kpiRow.innerHTML += `
+    <div class="kpi-card ${k.cls}">
+      <div class="kpi-label">${k.label}</div>
+      <div class="kpi-value">${typeof k.value === "number" ? k.value : k.value}<span class="kpi-unit">${k.unit}</span></div>
+      <div class="kpi-desc">${k.desc}</div>
+    </div>`;
+});
+
+// ─── Chart: Literacy Trend ────────────────────────────────────────
+(function() {
+  const d = D.literacy_over_time?.series || [];
+  makeChart("chart-literacy-trend", {
+    type: "line",
+    data: {
+      labels: d.map(r => r.year),
+      datasets: [{
+        label: "% scoring 5+ of 7",
+        data: d.map(r => r.pct_5plus),
+        borderColor: "#2563eb",
+        backgroundColor: ctx => linearGradient(ctx.chart.ctx, "#2563eb"),
+        tension: 0.35,
+        fill: true,
+        pointRadius: 6,
+        pointBackgroundColor: "#2563eb",
+        pointHoverRadius: 8,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false },
+        tooltip: { callbacks: { label: c => ` ${c.raw}% financially literate` } } },
+      scales: {
+        y: { min: 0, max: 60, ticks: { callback: v => v + "%" },
+             grid: { color: "#f1f5f9" } },
+        x: { grid: { display: false } }
+      }
+    }
+  });
+})();
+
+// ─── Chart: Topics ────────────────────────────────────────────────
+(function() {
+  const d = D.literacy_by_topic?.data || [];
+  makeChart("chart-topics", {
+    type: "bar",
+    data: {
+      labels: d.map(r => r.topic),
+      datasets: [{
+        label: "% correct",
+        data: d.map(r => r.pct_correct),
+        backgroundColor: d.map((_, i) => PALETTE[i % PALETTE.length] + "cc"),
+        borderRadius: 4,
+      }]
+    },
+    options: {
+      indexAxis: "y",
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false },
+        tooltip: { callbacks: { label: c => ` ${c.raw}% answered correctly` } } },
+      scales: {
+        x: { min: 0, max: 100, ticks: { callback: v => v + "%" },
+             grid: { color: "#f1f5f9" } },
+        y: { grid: { display: false } }
+      }
+    }
+  });
+})();
+
+// ─── Chart: By Age ────────────────────────────────────────────────
+(function() {
+  const d = D.demographics?.by_age || [];
+  makeChart("chart-age", {
+    type: "bar",
+    data: {
+      labels: d.map(r => r.group),
+      datasets: [
+        { label: "% Financially Literate", data: d.map(r => r.pct_5plus),
+          backgroundColor: "#2563ebcc", borderRadius: 3 },
+        { label: "% Financially Fragile", data: d.map(r => r.financial_fragile_pct),
+          backgroundColor: "#e11d48cc", borderRadius: 3 },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: "bottom" },
+        tooltip: { callbacks: { label: c => ` ${c.dataset.label}: ${c.raw}%` } } },
+      scales: {
+        y: { ticks: { callback: v => v + "%" }, grid: { color: "#f1f5f9" } },
+        x: { grid: { display: false } }
+      }
+    }
+  });
+})();
+
+// ─── Chart: By Education ─────────────────────────────────────────
+(function() {
+  const d = D.demographics?.by_education || [];
+  makeChart("chart-education", {
+    type: "bar",
+    data: {
+      labels: d.map(r => r.group),
+      datasets: [
+        { label: "% Financially Literate", data: d.map(r => r.pct_5plus),
+          backgroundColor: "#2563ebcc", borderRadius: 3 },
+        { label: "Has Retirement Account", data: d.map(r => r.has_retirement_pct),
+          backgroundColor: "#059669cc", borderRadius: 3 },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: "bottom" },
+        tooltip: { callbacks: { label: c => ` ${c.dataset.label}: ${c.raw}%` } } },
+      scales: {
+        y: { ticks: { callback: v => v + "%" }, grid: { color: "#f1f5f9" } },
+        x: { grid: { display: false } }
+      }
+    }
+  });
+})();
+
+// ─── Chart: By Income ────────────────────────────────────────────
+(function() {
+  const d = D.demographics?.by_income || [];
+  makeChart("chart-income", {
+    type: "bar",
+    data: {
+      labels: d.map(r => r.group),
+      datasets: [
+        { label: "% Financially Literate", data: d.map(r => r.pct_5plus),
+          backgroundColor: "#2563ebcc", borderRadius: 3 },
+        { label: "% Financially Fragile", data: d.map(r => r.financial_fragile_pct),
+          backgroundColor: "#e11d48cc", borderRadius: 3 },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: "bottom" } },
+      scales: {
+        y: { ticks: { callback: v => v + "%" }, grid: { color: "#f1f5f9" } },
+        x: { grid: { display: false } }
+      }
+    }
+  });
+})();
+
+// ─── Chart: By Race ──────────────────────────────────────────────
+(function() {
+  const d = D.demographics?.by_race || [];
+  makeChart("chart-race", {
+    type: "bar",
+    data: {
+      labels: d.map(r => r.group),
+      datasets: [{
+        label: "% Financially Literate (5+ of 7)",
+        data: d.map(r => r.pct_5plus),
+        backgroundColor: PALETTE.slice(0, d.length).map(c => c + "cc"),
+        borderRadius: 4,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { min: 0, max: 50, ticks: { callback: v => v + "%" }, grid: { color: "#f1f5f9" } },
+        x: { grid: { display: false } }
+      }
+    }
+  });
+})();
+
+// ─── Chart: Fragility Trend ──────────────────────────────────────
+(function() {
+  const d = D.fragility_trends?.series || [];
+  makeChart("chart-fragility", {
+    type: "line",
+    data: {
+      labels: d.map(r => r.year),
+      datasets: [{
+        label: "% Financially Fragile",
+        data: d.map(r => r.fragile_pct),
+        borderColor: "#e11d48",
+        backgroundColor: ctx => linearGradient(ctx.chart.ctx, "#e11d48"),
+        tension: 0.35, fill: true,
+        pointRadius: 6, pointBackgroundColor: "#e11d48",
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false },
+        tooltip: { callbacks: { label: c => ` ${c.raw}% financially fragile` } } },
+      scales: {
+        y: { min: 0, max: 70, ticks: { callback: v => v + "%" }, grid: { color: "#f1f5f9" } },
+        x: { grid: { display: false } }
+      }
+    }
+  });
+})();
+
+// ─── Chart: Credit Behavior ──────────────────────────────────────
+(function() {
+  const d = D.credit_behavior?.data || [];
+  makeChart("chart-credit-behavior", {
+    type: "doughnut",
+    data: {
+      labels: d.map(r => r.behavior),
+      datasets: [{
+        data: d.map(r => r.pct),
+        backgroundColor: PALETTE.slice(0, d.length),
+        borderWidth: 3,
+        borderColor: "#fff",
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      cutout: "58%",
+      plugins: { legend: { position: "bottom", labels: { font: { size: 12 } } },
+        tooltip: { callbacks: { label: c => ` ${c.label}: ${c.raw}%` } } }
+    }
+  });
+})();
+
+// ─── Chart: Racial Wealth Gap ─────────────────────────────────────
+(function() {
+  const d = D.wealth_gaps_scf?.median_net_worth || [];
+  makeChart("chart-race-wealth", {
+    type: "bar",
+    data: {
+      labels: d.map(r => r.group),
+      datasets: [{
+        label: "Median Net Worth ($k)",
+        data: d.map(r => r.median_net_worth_k),
+        backgroundColor: PALETTE.slice(0, d.length).map(c => c + "cc"),
+        borderRadius: 5,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false },
+        tooltip: { callbacks: { label: c => ` $${c.raw}k median net worth` } } },
+      scales: {
+        y: { ticks: { callback: v => "$" + v + "k" }, grid: { color: "#f1f5f9" } },
+        x: { grid: { display: false } }
+      }
+    }
+  });
+})();
+
+// ─── Chart: Retirement by Age ─────────────────────────────────────
+(function() {
+  const d = D.wealth_gaps_scf?.retirement_by_age || [];
+  makeChart("chart-retirement-age", {
+    type: "bar",
+    data: {
+      labels: d.map(r => r.age_group),
+      datasets: [{
+        label: "Median Retirement Savings ($k)",
+        data: d.map(r => r.median_retirement_k),
+        backgroundColor: "#7c3aedcc",
+        borderRadius: 5,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false },
+        tooltip: { callbacks: { label: c => ` $${c.raw}k median retirement savings` } } },
+      scales: {
+        y: { ticks: { callback: v => "$" + v + "k" }, grid: { color: "#f1f5f9" } },
+        x: { grid: { display: false } }
+      }
+    }
+  });
+})();
+
+// ─── Chart: Unbanked by Income ─────────────────────────────────────
+(function() {
+  const d = D.banking_access_fdic?.by_income || [];
+  makeChart("chart-unbanked", {
+    type: "bar",
+    data: {
+      labels: d.map(r => r.income),
+      datasets: [{
+        label: "% Unbanked",
+        data: d.map(r => r.unbanked_pct),
+        backgroundColor: "#d97706cc",
+        borderRadius: 5,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false },
+        tooltip: { callbacks: { label: c => ` ${c.raw}% unbanked` } } },
+      scales: {
+        y: { ticks: { callback: v => v + "%" }, grid: { color: "#f1f5f9" } },
+        x: { grid: { display: false } }
+      }
+    }
+  });
+})();
+
+// ─── Chart: FinTech ───────────────────────────────────────────────
+(function() {
+  const d = D.fintech_adoption?.data || [];
+  makeChart("chart-fintech", {
+    type: "bar",
+    data: {
+      labels: d.map(r => r.tool),
+      datasets: [{
+        label: "% Using Tool",
+        data: d.map(r => r.pct_use),
+        backgroundColor: d.map((_, i) => PALETTE[i % PALETTE.length] + "cc"),
+        borderRadius: 4,
+      }]
+    },
+    options: {
+      indexAxis: "y",
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false },
+        tooltip: { callbacks: { label: c => ` ${c.raw}% of adults` } } },
+      scales: {
+        x: { min: 0, max: 100, ticks: { callback: v => v + "%" }, grid: { color: "#f1f5f9" } },
+        y: { grid: { display: false } }
+      }
+    }
+  });
+})();
+
+// ─── Table: Unbanked Reasons ──────────────────────────────────────
+(function() {
+  const d = D.banking_access_fdic?.top_reasons_unbanked || [];
+  const tb = document.getElementById("unbanked-reasons-table");
+  if (!tb) return;
+  tb.innerHTML = d.map(r => `
+    <tr>
+      <td>${r.reason}</td>
+      <td><strong>${r.pct}%</strong></td>
+      <td>
+        <div class="bar-cell">
+          <div class="bar-fill" style="width:${r.pct * 1.8}px; background:#d97706;"></div>
+          <span class="bar-val">${r.pct}%</span>
+        </div>
+      </td>
+    </tr>`).join("");
+})();
+
+// ─── FRED Live Charts ─────────────────────────────────────────────
+(function() {
+  const fred = D.fred_live || {};
+
+  function fredChart(canvasId, key, label, color, yFmt) {
+    const obs = fred[key]?.observations || [];
+    if (!obs.length) {
+      const ctx = document.getElementById(canvasId);
+      if (ctx) {
+        const parent = ctx.closest(".chart-wrapper");
+        if (parent) parent.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#8896a6;font-size:13px;text-align:center;padding:20px;">No live data — add FRED_API_KEY as a GitHub repository secret to enable weekly auto-refresh</div>`;
+      }
+      return;
+    }
+    // Thin to last 120 observations for readability
+    const sliced = obs.length > 120 ? obs.slice(obs.length - 120) : obs;
+    makeChart(canvasId, {
+      type: "line",
+      data: {
+        labels: sliced.map(o => o.date),
+        datasets: [{
+          label,
+          data: sliced.map(o => o.value),
+          borderColor: color,
+          backgroundColor: ctx => linearGradient(ctx.chart.ctx, color),
+          tension: 0.3, fill: true,
+          pointRadius: 0, pointHoverRadius: 5,
+          borderWidth: 2,
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { ticks: { callback: yFmt }, grid: { color: "#f1f5f9" } },
+          x: {
+            ticks: {
+              maxTicksLimit: 8,
+              callback: function(_, i) { return sliced[i]?.date?.slice(0,7) || ""; }
+            },
+            grid: { display: false }
+          }
+        }
+      }
+    });
+  }
+
+  fredChart("chart-savings-rate",  "personal_savings_rate",     "Savings Rate %",        "#059669", v => v + "%");
+  fredChart("chart-debt-service",  "household_debt_to_income",  "Debt Service % of Income", "#e11d48", v => v + "%");
+  fredChart("chart-cc-delinq",     "credit_card_delinquency",   "CC Delinquency Rate %", "#d97706", v => v + "%");
+  fredChart("chart-fed-funds",     "fed_funds_rate",            "Fed Funds Rate %",      "#7c3aed", v => v + "%");
+})();
+</script>
+</body>
+</html>
