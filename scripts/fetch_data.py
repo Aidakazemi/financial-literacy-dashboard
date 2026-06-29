@@ -256,7 +256,24 @@ FRED_SERIES = {
     "cpi_all": "CPIAUCSL",                       # CPI — cost of living context
     "fed_funds_rate": "FEDFUNDS",                # Fed funds rate — interest cost context
 }
+# ── TEMPORARY DEBUG — remove after confirming ──────────────────
+def test_fred_connection():
+    if not FRED_API_KEY:
+        print("[DEBUG] No API key found in environment")
+        return
+    print(f"[DEBUG] API key found, length={len(FRED_API_KEY)}, starts with: {FRED_API_KEY[:4]}...")
+    url = f"https://api.stlouisfed.org/fred/series/observations?series_id=PSAVERT&api_key={FRED_API_KEY}&file_type=json&limit=5&sort_order=desc"
+    print(f"[DEBUG] Testing URL (key redacted): {url.replace(FRED_API_KEY, 'XXXXX')}")
+    try:
+        with urllib.request.urlopen(url, timeout=15) as r:
+            raw = r.read().decode("utf-8")
+            print(f"[DEBUG] HTTP status: {r.status}")
+            print(f"[DEBUG] Response preview: {raw[:500]}")
+    except Exception as e:
+        print(f"[DEBUG] Connection error: {type(e).__name__}: {e}")
 
+test_fred_connection()
+# ── END TEMPORARY DEBUG ─────────────────────────────────────────
 
 def build_payload():
     payload = {
