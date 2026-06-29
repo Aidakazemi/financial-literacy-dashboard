@@ -25,9 +25,8 @@ os.makedirs(DATA_DIR, exist_ok=True)
 # FRED API helper
 # ─────────────────────────────────────────────
 def fetch_fred(series_id, limit=60, frequency=None, units=None):
-    """Fetch a FRED series and return list of {date, value} dicts."""
     if not FRED_API_KEY:
-        print(f"  [WARN] No FRED_API_KEY — skipping live fetch for {series_id}")
+        print(f"  [WARN] No FRED_API_KEY — skipping {series_id}")
         return []
 
     params = {
@@ -43,15 +42,20 @@ def fetch_fred(series_id, limit=60, frequency=None, units=None):
         params["units"] = units
 
     url = "https://api.stlouisfed.org/fred/series/observations?" + urllib.parse.urlencode(params)
+    print(f"  [DEBUG] Requesting: {url.replace(FRED_API_KEY, 'REDACTED')}")
     try:
         with urllib.request.urlopen(url, timeout=15) as r:
-            data = json.loads(r.read())
+            raw = r.read()
+            data = json.loads(raw)
+        if "observations" not in data:
+            print(f"  [ERROR] Unexpected response for {series_id}: {str(raw)[:300]}")
+            return []
         obs = [
             {"date": o["date"], "value": float(o["value"])}
             for o in data.get("observations", [])
             if o["value"] != "."
         ]
-        # Return chronological
+        print(f"  [OK] {series_id} — {len(obs)} observations")
         return list(reversed(obs))
     except Exception as e:
         print(f"  [ERROR] FRED fetch failed for {series_id}: {e}")
