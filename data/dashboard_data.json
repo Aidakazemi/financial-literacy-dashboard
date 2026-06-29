@@ -2,7 +2,7 @@
   "meta": {
     "title": "U.S. Personal Financial Literacy Dashboard",
     "description": "Research-grade data on financial literacy, fragility, wealth gaps, and resource access across American households.",
-    "last_updated": "2026-06-29T20:55:39Z",
+    "last_updated": "2026-06-29T21:11:01Z",
     "sources": [
       "FINRA Foundation National Financial Capability Study (NFCS) 2009\u20132024",
       "Federal Reserve Survey of Consumer Finances (SCF) 2022",
@@ -19,7 +19,7 @@
     "annual_cost_financial_illiteracy_usd_bn": 415,
     "pct_overspending_income_2024": 34,
     "pct_pay_only_min_credit_card": 20,
-    "updated_at": "2026-06-29T20:55:39Z"
+    "updated_at": "2026-06-29T21:11:01Z"
   },
   "literacy_over_time": {
     "source": "FINRA Foundation National Financial Capability Study (NFCS), 2009\u20132024",
