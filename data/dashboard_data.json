@@ -2,7 +2,7 @@
   "meta": {
     "title": "U.S. Personal Financial Literacy Dashboard",
     "description": "Research-grade data on financial literacy, fragility, wealth gaps, and resource access across American households.",
-    "last_updated": "2026-10-04T11:34:09Z",
+    "last_updated": "2026-10-11T11:51:55Z",
     "sources": [
       "FINRA Foundation National Financial Capability Study (NFCS) 2009\u20132024",
       "Federal Reserve Survey of Consumer Finances (SCF) 2022",
@@ -19,7 +19,7 @@
     "annual_cost_financial_illiteracy_usd_bn": 415,
     "pct_overspending_income_2024": 34,
     "pct_pay_only_min_credit_card": 20,
-    "updated_at": "2026-10-04T11:34:09Z"
+    "updated_at": "2026-10-11T11:51:55Z"
   },
   "literacy_over_time": {
     "source": "FINRA Foundation National Financial Capability Study (NFCS), 2009\u20132024",
@@ -1136,10 +1136,6 @@
       "series_id": "TOTALSL",
       "observations": [
         {
-          "date": "2019-12-01",
-          "value": 4192191.39
-        },
-        {
           "date": "2020-01-01",
           "value": 4171617.45
         },
@@ -1405,55 +1401,59 @@
         },
         {
           "date": "2025-07-01",
-          "value": 5055914.29
+          "value": 5055914.28
         },
         {
           "date": "2025-08-01",
-          "value": 5058589.78
+          "value": 5058589.77
         },
         {
           "date": "2025-09-01",
-          "value": 5071963.3
+          "value": 5071963.31
         },
         {
           "date": "2025-10-01",
-          "value": 5079764.68
+          "value": 5079764.65
         },
         {
           "date": "2025-11-01",
-          "value": 5083079.48
+          "value": 5083079.45
         },
         {
           "date": "2025-12-01",
-          "value": 5098820.89
+          "value": 5098820.82
         },
         {
           "date": "2026-01-01",
-          "value": 5103211.6
+          "value": 5103212.46
         },
         {
           "date": "2026-02-01",
-          "value": 5110389.03
+          "value": 5110390.78
         },
         {
           "date": "2026-03-01",
-          "value": 5131428.8
+          "value": 5131428.77
         },
         {
           "date": "2026-04-01",
-          "value": 5151608.49
+          "value": 5152527.91
         },
         {
           "date": "2026-05-01",
-          "value": 5153586.64
+          "value": 5155421.48
         },
         {
           "date": "2026-06-01",
-          "value": 5168141.71
+          "value": 5170757.74
         },
         {
           "date": "2026-07-01",
-          "value": 5186204.07
+          "value": 5188497.83
+        },
+        {
+          "date": "2026-08-01",
+          "value": 5196778.44
         }
       ]
     },
