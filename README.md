@@ -2,7 +2,7 @@
 
 A research-grade, self-updating GitHub Pages dashboard exploring financial literacy, fragility, wealth inequality, and access across American households.
 
-**Live Dashboard →** `https://<your-username>.github.io/<repo-name>/`
+**Live Dashboard →** [`https://<your-username>.github.io/<repo-name>/`](https://aidakazemi.github.io/financial-literacy-dashboard/)
 
 ---
 
