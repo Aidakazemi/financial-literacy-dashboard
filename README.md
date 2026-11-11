@@ -2,7 +2,7 @@
 
 A research-grade, self-updating GitHub Pages dashboard exploring financial literacy, fragility, wealth inequality, and access across American households.
 
-**Live Dashboard →**https://aidakazemi.github.io/financial-literacy-dashboard/
+**Live Dashboard →** 'https://aidakazemi.github.io/financial-literacy-dashboard/'
 ---
 
 ## Research Questions Answered
@@ -139,7 +139,7 @@ If you use this dashboard in academic work:
 
 > Kazemi, A. (2024). *U.S. Personal Financial Literacy Dashboard* [Data visualization].
 > Data sources: FINRA Foundation NFCS 2024; Federal Reserve SCF 2022; FDIC 2023; FRED API.
-> Retrieved from https://aidakazemi.github.io/financial-literacy-dashboard/
+> Retrieved from 'https://aidakazemi.github.io/financial-literacy-dashboard/'
 
 ---
 
