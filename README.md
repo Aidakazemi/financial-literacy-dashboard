@@ -137,9 +137,9 @@ Add a new Python dict in `fetch_data.py` following the existing pattern, include
 
 If you use this dashboard in academic work:
 
-> [Author]. (2024). *U.S. Personal Financial Literacy Dashboard* [Data visualization].
+> Kazemi, A. (2024). *U.S. Personal Financial Literacy Dashboard* [Data visualization].
 > Data sources: FINRA Foundation NFCS 2024; Federal Reserve SCF 2022; FDIC 2023; FRED API.
-> Retrieved from https://github.com/<username>/fin-literacy-dashboard
+> Retrieved from https://aidakazemi.github.io/financial-literacy-dashboard/
 
 ---
 
